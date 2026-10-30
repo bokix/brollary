@@ -14,11 +14,13 @@
   "main": "electron/main.mjs",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "npm run build && electron ."
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --mac"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
     "typescript": "^7.0.2"
   },
   "repository": {

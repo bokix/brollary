@@ -1,0 +1,36 @@
+# Brollary macOS 打包配置（electron-builder）
+appId: com.bokix.brollary
+productName: Brollary
+directories:
+  output: release
+  buildResources: assets
+
+files:
+  - electron/**
+  - dist/**
+  - renderer/**
+  - assets/**
+  - package.json
+  # ffprobe-static 的 npm 包内含全平台二进制，只保留 darwin，减体积
+  - "!**/ffprobe-static/bin/{linux,win32}/**"
+
+# ffmpeg/ffprobe 二进制无法从 asar 内执行，必须解包到实体文件系统
+asarUnpack:
+  - "node_modules/ffmpeg-static/**"
+  - "node_modules/ffprobe-static/**"
+
+mac:
+  icon: assets/brollary.icns
+  category: public.app-category.graphics-design
+  # 未申请 Apple 开发者证书：跳过签名与公证（ad-hoc）
+  identity: null
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
+
+dmg:
+  title: Brollary ${version}
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
