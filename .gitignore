@@ -4,3 +4,4 @@ dist/
 node_modules/
 stash.db*
 release/
+DEVELOPMENT-LOCAL.md
