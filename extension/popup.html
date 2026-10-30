@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { width: 320px; font: 13px/1.5 -apple-system, "PingFang SC", sans-serif; margin: 0; }
+    header { padding: 10px 12px; font-weight: 700; border-bottom: 1px solid #eee; }
+    #list { max-height: 320px; overflow-y: auto; padding: 6px 12px; }
+    label.item { display: flex; gap: 8px; align-items: center; padding: 4px 0; cursor: pointer; }
+    label.item img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: #f0f0f0; }
+    label.item .meta { font-size: 11px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    footer { padding: 10px 12px; border-top: 1px solid #eee; display: flex; gap: 8px; }
+    input.tags { flex: 1; padding: 5px 8px; border: 1px solid #ddd; border-radius: 6px; }
+    button { padding: 5px 14px; border: 0; border-radius: 6px; background: #3e63dd; color: #fff; cursor: pointer; }
+    button:disabled { opacity: .5; }
+    #status { padding: 0 12px 10px; font-size: 12px; color: #666; min-height: 16px; }
+    .empty { color: #999; padding: 16px 12px; }
+  </style>
+</head>
+<body>
+  <header>Brollary 采集</header>
+  <div id="list"><div class="empty">正在读取页面图片…</div></div>
+  <footer>
+    <input class="tags" id="tags" placeholder="标签（逗号分隔）">
+    <button id="save">收藏选中</button>
+  </footer>
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' file: data:; media-src file:; font-src 'self' file:; style-src 'self' 'unsafe-inline'">
+  <title>Brollary · 空镜库</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="brand-name">Brollary</span><span class="brand-cn">空镜库</span></div>
+    <select id="lib-select" title="当前库"></select>
+    <button id="lib-manage" class="hdr-btn" title="管理库：新建 / 添加 / 导入">库管理</button>
+    <input id="search" type="search" placeholder="搜索（名称 / 标签 / 注释 / URL）" autofocus>
+    <button id="meta-toggle" class="hdr-btn" title="显示/隐藏元信息面板">元信息</button>
+    <button id="theme-toggle" class="hdr-btn" title="切换亮/暗主题">☀️ 亮色</button>
+    <label class="trash-toggle"><input type="checkbox" id="trash"> 回收站</label>
+  </header>
+  <div id="body-row">
+    <aside id="sidebar">
+      <div class="side-title">视图</div>
+      <div id="nav-views"></div>
+      <div class="side-title">智能文件夹</div>
+      <div id="nav-smart"></div>
+      <div class="side-title">标签</div>
+      <div id="nav-tags"></div>
+      <div class="side-title">工具</div>
+      <div class="nav-item" id="nav-color"><span>按颜色搜索</span></div>
+      <div class="nav-item" id="nav-dup"><span>重复文件</span></div>
+    </aside>
+    <div id="main-col">
+      <nav id="ext-bar"></nav>
+      <nav id="color-bar" class="hidden"></nav>
+      <div id="scroller">
+        <div id="sizer"><div id="grid"></div></div>
+        <div id="dupview" class="hidden"></div>
+      </div>
+    </div>
+    <aside id="meta-panel" class="hidden">
+      <div class="mp-head"><span>元信息</span><button id="mp-close">✕</button></div>
+      <div id="mp-thumb"></div>
+      <div id="mp-fields"></div>
+      <div class="mp-section">
+        <div class="mp-label">标签</div>
+        <div id="mp-tags"></div>
+        <input id="mp-tag-input" placeholder="添加标签，回车确认（支持逗号分隔多个）">
+      </div>
+      <div class="mp-actions">
+        <button id="mp-open">打开原文件</button>
+        <button id="mp-reveal">Finder</button>
+      </div>
+    </aside>
+  </div>
+  <footer><span id="count"></span><span id="sel-info"></span></footer>
+
+  <div id="lib-modal" class="hidden">
+    <div class="lib-card">
+      <div class="lib-head"><span>库管理</span><button id="libm-close">✕</button></div>
+      <div id="lib-list"></div>
+      <div class="lib-actions">
+        <button id="libm-new">新建空库</button>
+        <button id="libm-add">添加现有 .library</button>
+        <button id="libm-import">导入文件夹</button>
+        <button id="libm-import-files">导入文件…</button>
+      </div>
+      <div id="libm-form" class="hidden">
+        <input id="libm-name" placeholder="库名称（例如：我的灵感库）">
+        <button id="libm-pickdir">选择位置</button>
+        <span id="libm-dir-label">未选择位置</span>
+        <button id="libm-create" disabled>创建</button>
+      </div>
+      <div id="libm-status"></div>
+    </div>
+  </div>
+
+  <div id="overlay" class="hidden">
+    <div id="ov-media"></div>
+    <div id="ov-toolbar">
+      <button id="ov-prev" title="上一个 (←)">‹</button>
+      <span id="ov-pos"></span>
+      <button id="ov-next" title="下一个 (→)">›</button>
+      <span class="sep"></span>
+      <button id="ov-zoom-out" title="缩小">−</button>
+      <button id="ov-zoom-in" title="放大">＋</button>
+      <button id="ov-rotate" title="旋转">⟳</button>
+      <button id="ov-fit" title="适应窗口">适应</button>
+      <span class="sep"></span>
+      <button id="ov-restore" class="hidden">恢复</button>
+      <button id="ov-open">打开原文件</button>
+      <button id="ov-reveal">Finder</button>
+      <button id="ov-close" title="关闭 (Esc)">✕</button>
+    </div>
+    <div id="ov-info"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

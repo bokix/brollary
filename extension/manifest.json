@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Brollary 采集",
+  "short_name": "Brollary",
+  "version": "0.1.0",
+  "description": "把网页图片一键收藏进 Brollary（空镜库）素材库（本地 API: 127.0.0.1）",
+  "icons": {
+    "16": "icon_16.png",
+    "48": "icon_48.png",
+    "128": "icon_128.png"
+  },
+  "permissions": ["contextMenus", "storage", "activeTab", "scripting"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*", "<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Brollary 采集" },
+  "options_page": "options.html"
+}

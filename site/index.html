@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brollary · 空镜库 — 本地优先的素材库管理器</title>
+<meta name="description" content="Brollary（空镜库）是一款本地优先的素材库管理器：把散落各处的图片、视频、音频、字体、LUT 收进同一个地方，可浏览、可搜索、可复用。">
+<meta property="og:title" content="Brollary · 空镜库">
+<meta property="og:description" content="本地优先的素材库管理器。数据属于你。">
+<meta property="og:image" content="icon.png">
+<link rel="icon" type="image/png" href="icon-128.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+/* ============ Design Tokens ============ */
+:root{
+  --bg:#f6f7fb;
+  --bg-soft:#eef1f9;
+  --card:#ffffff;
+  --ink:#131318;
+  --fg:#3b3b47;
+  --muted:#77778a;
+  --line:#e6e7ef;
+  --accent:#3e63dd;
+  --accent-2:#4f8cff;
+  --accent-soft:#e8eefc;
+  --dark:#141417;
+  --dark-2:#1c1c21;
+  --dark-line:#2a2a31;
+  --radius-l:20px;
+  --radius-m:14px;
+  --radius-s:9px;
+  --shadow-l:0 24px 64px -16px rgba(38,49,108,.22);
+  --shadow-m:0 12px 32px -12px rgba(38,49,108,.16);
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--fg);
+  font-size:16px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--accent);color:#fff}
+a{color:inherit;text-decoration:none}
+img{display:block}
+.container{max-width:1120px;margin:0 auto;padding:0 28px}
+
+/* ============ Nav ============ */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  background:rgba(246,247,251,.72);
+  border-bottom:1px solid transparent;
+  transition:border-color .3s,background .3s;
+}
+.nav.scrolled{border-bottom-color:var(--line);background:rgba(246,247,251,.9)}
+.nav-inner{
+  max-width:1120px;margin:0 auto;padding:0 28px;
+  height:64px;display:flex;align-items:center;gap:12px;
+}
+.nav-logo{width:30px;height:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.nav-brand{display:flex;align-items:baseline;gap:7px;font-weight:800;color:var(--ink)}
+.nav-logo-name{font-size:17px;letter-spacing:.01em}
+.nav-logo-cn{font-size:12px;color:var(--muted);font-weight:500}
+.nav-links{display:flex;gap:30px;margin-left:auto;font-size:14px;color:var(--fg)}
+.nav-links a{opacity:.82;transition:opacity .2s,color .2s}
+.nav-links a:hover{opacity:1;color:var(--accent)}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 20px;border-radius:999px;font-size:14px;font-weight:600;
+  transition:transform .18s,box-shadow .18s,background .18s;
+  cursor:pointer;border:none;font-family:var(--font);
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;box-shadow:0 6px 18px -6px rgba(62,99,221,.5);
+}
+.btn-primary:hover{box-shadow:0 10px 26px -8px rgba(62,99,221,.6)}
+.btn-ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px rgba(30,35,70,.05)}
+.btn-ghost:hover{border-color:#c9cddd}
+.btn-nav{padding:7px 16px;font-size:13.5px}
+.btn svg{width:15px;height:15px}
+
+/* ============ Hero ============ */
+.hero{
+  position:relative;
+  padding:170px 0 110px;
+  background:
+    radial-gradient(900px 420px at 78% -8%,rgba(79,140,255,.14),transparent 60%),
+    radial-gradient(700px 380px at 8% 4%,rgba(120,180,255,.12),transparent 60%),
+    linear-gradient(180deg,#fbfcff 0%,var(--bg) 100%);
+  overflow:hidden;
+}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(62,99,221,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(62,99,221,.045) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%);
+  pointer-events:none;
+}
+.hero-inner{position:relative;text-align:center}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px 6px 8px;border-radius:999px;
+  background:var(--card);border:1px solid var(--line);
+  font-size:13px;color:var(--fg);box-shadow:0 2px 10px rgba(30,35,70,.05);
+}
+.hero-badge .dot{width:7px;height:7px;border-radius:50%;background:#3ecf8e;box-shadow:0 0 0 4px rgba(62,207,142,.18)}
+.hero-badge b{font-weight:600}
+.hero h1{
+  margin:30px auto 0;max-width:820px;
+  font-size:clamp(38px,6vw,64px);
+  line-height:1.18;letter-spacing:-.02em;
+  color:var(--ink);font-weight:800;
+}
+.hero h1 .grad{
+  background:linear-gradient(120deg,var(--accent) 10%,var(--accent-2) 55%,#7aa8ff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-sub{
+  margin:24px auto 0;max-width:600px;
+  font-size:18px;color:var(--muted);line-height:1.8;
+}
+.hero-cta{display:flex;gap:14px;justify-content:center;margin-top:38px;flex-wrap:wrap}
+.hero-cta .btn{padding:13px 28px;font-size:15.5px}
+
+/* --- App window mockup --- */
+.hero-visual{position:relative;margin-top:80px}
+.app-window{
+  position:relative;max-width:980px;margin:0 auto;
+  border-radius:16px;overflow:hidden;
+  background:var(--dark);color:#e8e8ec;
+  border:1px solid #2e2e38;
+  box-shadow:var(--shadow-l),0 0 0 1px rgba(255,255,255,.04) inset;
+  text-align:left;
+}
+.aw-titlebar{
+  height:38px;display:flex;align-items:center;padding:0 14px;gap:8px;
+  background:#191920;border-bottom:1px solid var(--dark-line);
+}
+.aw-dot{width:11px;height:11px;border-radius:50%}
+.aw-dot.r{background:#ff5f57}.aw-dot.y{background:#febc2e}.aw-dot.g{background:#28c840}
+.aw-title{margin-left:10px;font-size:12px;color:#8f8f9c}
+.aw-header{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-bottom:1px solid var(--dark-line);font-size:12px;
+}
+.aw-brand{color:var(--accent-2);font-weight:800;font-size:14px}
+.aw-brand-cn{color:#9a9aa5;font-size:10px}
+.aw-search{
+  flex:1;max-width:340px;margin:0 auto;
+  background:var(--dark-2);border:1px solid var(--dark-line);
+  border-radius:8px;padding:5px 12px;color:#6d6d7a;font-size:12px;
+  display:flex;align-items:center;gap:7px;
+}
+.aw-search::before{content:"⌕";font-size:13px}
+.aw-hbtn{
+  background:var(--dark-2);border:1px solid var(--dark-line);border-radius:7px;
+  color:#9a9aa5;padding:4px 11px;font-size:11px;
+}
+.aw-body{display:flex;height:430px}
+.aw-sidebar{
+  width:158px;flex:none;border-right:1px solid var(--dark-line);
+  padding:10px 8px;font-size:12px;
+}
+.aw-side-title{font-size:10px;color:#9a9aa5;text-transform:uppercase;letter-spacing:.06em;margin:10px 6px 4px}
+.aw-nav{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 10px;border-radius:7px;color:#dcdce4;
+}
+.aw-nav.on{background:var(--accent);color:#fff;font-weight:600}
+.aw-nav.on .aw-n{color:rgba(255,255,255,.8)}
+.aw-nav .aw-n{font-size:10.5px;color:#7a7a86}
+.aw-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.aw-chips{
+  display:flex;gap:6px;padding:8px 14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--dark-line);
+}
+.aw-chip{
+  padding:3px 10px;border-radius:999px;font-size:11px;
+  border:1px solid var(--dark-line);background:var(--dark-2);color:#9a9aa5;
+}
+.aw-chip.on{border-color:var(--accent);color:var(--accent-2);background:#182338}
+.aw-grid{
+  flex:1;padding:14px;display:grid;gap:12px;
+  grid-template-columns:repeat(4,1fr);
+  grid-auto-rows:min-content;
+  overflow:hidden;
+}
+.tile{border-radius:9px;overflow:hidden;background:var(--dark-2);border:1px solid #26262e;position:relative}
+.tile .thumb{position:relative;overflow:hidden}
+.tile .thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.32))}
+.tile .label{
+  height:26px;display:flex;align-items:center;gap:6px;padding:0 8px;
+  font-size:10.5px;color:#9a9aa5;white-space:nowrap;overflow:hidden;
+}
+.tile .ext{color:var(--accent-2);flex:none}
+.tile .dur{
+  position:absolute;right:6px;bottom:6px;z-index:2;
+  font-size:9.5px;padding:2px 6px;border-radius:5px;
+  background:rgba(0,0,0,.62);color:#fff;font-family:var(--mono);
+}
+.tile .play{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;
+}
+.tile .play span{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(10,10,14,.55);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;padding-left:3px;
+  border:1px solid rgba(255,255,255,.25);
+}
+.tile.video .pbar{position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.18);width:100%;z-index:3}
+.tile.video .pbar i{display:block;height:100%;width:0;background:var(--accent-2);animation:pbar 6s ease-in-out infinite}
+@keyframes pbar{0%{width:0}70%{width:100%}100%{width:100%}}
+.tile.font-thumb .thumb{display:flex;align-items:center;justify-content:center;background:#1d2433;color:#c8d6ff;font-size:34px;font-weight:600;letter-spacing:-.02em}
+.tile.lut-thumb .thumb{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr)}
+.tile.tag::before{
+  content:attr(data-tag);position:absolute;left:6px;top:6px;z-index:2;
+  font-size:9px;padding:2px 7px;border-radius:5px;
+  background:rgba(62,99,221,.85);color:#fff;backdrop-filter:blur(4px);
+}
+.aw-footer{
+  display:flex;justify-content:space-between;padding:6px 14px;
+  border-top:1px solid var(--dark-line);color:#9a9aa5;font-size:11px;
+}
+
+/* floating cards */
+.float-card{
+  position:absolute;z-index:5;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+  border:1px solid rgba(230,231,239,.9);border-radius:var(--radius-m);
+  box-shadow:var(--shadow-m);padding:14px 16px;
+  animation:float 6s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.fc-color{left:-6px;top:6%;animation-delay:.4s}
+.fc-src{right:-4px;top:16%;animation-delay:1.2s}
+.fc-fast{left:6%;bottom:-28px;animation-delay:2s}
+.fc-title{font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+.fc-swatches{display:flex;gap:6px;margin-top:10px}
+.fc-swatch{width:20px;height:20px;border-radius:6px;border:1px solid rgba(0,0,0,.08)}
+.fc-swatch.ring{outline:2px solid var(--accent);outline-offset:2px}
+.fc-src .url{font-family:var(--mono);font-size:11px;color:var(--accent);margin-top:6px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-src .cap{font-size:11px;color:var(--muted)}
+.fc-fast .cap{font-size:11px;color:var(--muted);margin-top:6px;max-width:210px}
+
+/* feature teaser strip */
+.stats{
+  margin-top:96px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+}
+.stat{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius-l);
+  padding:24px 20px;text-align:center;
+  transition:transform .25s,box-shadow .25s,border-color .25s;
+}
+.stat:hover{transform:translateY(-4px);box-shadow:var(--shadow-m);border-color:#d6dae8}
+.stat .n{
+  font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.stat .n svg{width:18px;height:18px;color:var(--accent);flex:none}
+.stat .c{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.6}
+
+/* ============ Sections ============ */
+section{padding:110px 0}
+.sec-head{text-align:center;max-width:640px;margin:0 auto 64px}
+.sec-tag{
+  display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.12em;
+  color:var(--accent);text-transform:uppercase;margin-bottom:14px;
+}
+.sec-head h2{
+  font-size:clamp(28px,4vw,40px);color:var(--ink);
+  letter-spacing:-.02em;line-height:1.25;font-weight:800;
+}
+.sec-head p{margin-top:16px;font-size:16.5px;color:var(--muted)}
+
+/* feature grid */
+.features{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.f-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.f-card{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-l);
+  padding:30px 28px;transition:transform .25s,box-shadow .25s,border-color .25s;
+}
+.f-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-m);border-color:#d6dae8}
+.f-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent-soft),#dfe9ff);
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+  color:var(--accent);
+}
+.f-card h3{font-size:17px;color:var(--ink);font-weight:700;letter-spacing:-.01em}
+.f-card p{margin-top:8px;font-size:14px;color:var(--muted);line-height:1.75}
+.f-card .mini{
+  margin-top:16px;font-family:var(--mono);font-size:11.5px;
+  background:#eef1f9;border:1px solid var(--line);border-radius:var(--radius-s);
+  padding:9px 12px;color:#5b6a94;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ============ Color search demo ============ */
+.color-sec{background:var(--dark);color:#dcdce4;position:relative;overflow:hidden}
+.color-sec::before{
+  content:"";position:absolute;top:-200px;right:-160px;width:560px;height:560px;border-radius:50%;
+  background:radial-gradient(circle,rgba(79,140,255,.16),transparent 65%);
+}
+.color-sec .sec-tag{color:#7aa8ff}
+.color-sec .sec-head h2{color:#f2f2f6}
+.color-sec .sec-head p{color:#9a9aa5}
+.color-wrap{display:grid;grid-template-columns:1fr 1.35fr;gap:56px;align-items:center;position:relative}
+.color-copy .big{font-size:19px;color:#eaeaf0;line-height:1.8}
+.color-copy .big em{font-style:normal;color:var(--accent-2);font-weight:600}
+.color-copy p.sub{margin-top:16px;font-size:14.5px;color:#9a9aa5;line-height:1.8}
+.picker{margin-top:30px}
+.picker-label{font-size:12px;color:#9a9aa5;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.picker-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.p-swatch{
+  width:38px;height:38px;border-radius:11px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.14);
+  transition:transform .18s,outline-color .18s;
+}
+.p-swatch:hover{transform:scale(1.1)}
+.p-swatch.on{outline:2px solid var(--accent-2);outline-offset:3px}
+.p-custom{
+  width:38px;height:38px;border-radius:11px;cursor:pointer;overflow:hidden;position:relative;
+  border:1px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;
+  color:#9a9aa5;font-size:18px;line-height:1;transition:border-color .2s;
+}
+.p-custom:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.p-custom input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.demo-meta{margin-top:16px;font-size:12.5px;color:#9a9aa5;min-height:22px}
+.demo-meta b{color:var(--accent-2);font-variant-numeric:tabular-nums}
+.demo-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+}
+.d-tile{
+  border-radius:12px;overflow:hidden;background:var(--dark-2);
+  border:1px solid #26262e;transition:opacity .3s,transform .3s,box-shadow .3s,border-color .3s;
+}
+.demo-grid.picked .d-tile{opacity:.22;transform:scale(.97)}
+.demo-grid.picked .d-tile.hit{
+  opacity:1;transform:scale(1);border-color:var(--accent-2);
+  box-shadow:0 0 0 1px var(--accent-2),0 12px 30px -10px rgba(79,140,255,.45);
+}
+.d-thumb{aspect-ratio:4/3;position:relative;overflow:hidden}
+.d-thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.35))}
+.d-sim{
+  position:absolute;left:7px;top:7px;z-index:2;opacity:0;transform:translateY(-4px);
+  font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;
+  background:var(--accent);color:#fff;transition:opacity .25s,transform .25s;
+  font-variant-numeric:tabular-nums;
+}
+.d-tile.hit .d-sim{opacity:1;transform:translateY(0)}
+.d-label{height:26px;display:flex;align-items:center;gap:6px;padding:0 8px;font-size:10.5px;color:#9a9aa5}
+.d-label .ext{color:var(--accent-2)}
+
+/* ============ Data ownership ============ */
+.data-sec{background:#fff;border-bottom:1px solid var(--line)}
+.data-wrap{display:grid;grid-template-columns:1fr 1.15fr;gap:60px;align-items:center}
+.data-points{margin-top:34px;display:flex;flex-direction:column;gap:24px}
+.dpt{display:flex;gap:16px}
+.dpt .n{
+  flex:none;width:32px;height:32px;border-radius:10px;
+  background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;
+}
+.dpt h4{font-size:15.5px;color:var(--ink);font-weight:700}
+.dpt p{margin-top:4px;font-size:14px;color:var(--muted);line-height:1.75}
+.code-card{
+  background:var(--dark);border-radius:var(--radius-l);
+  border:1px solid #2e2e38;overflow:hidden;
+  box-shadow:var(--shadow-l);
+}
+.code-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--dark-line)}
+.code-bar .aw-dot{width:10px;height:10px}
+.code-bar .name{margin-left:8px;font-size:12px;color:#8f8f9c;font-family:var(--mono)}
+.code-card pre{
+  padding:20px 22px;font-family:var(--mono);font-size:12.5px;line-height:1.85;
+  color:#c9c9d4;overflow-x:auto;
+}
+.tok-dir{color:#8ab0ff;font-weight:600}
+.tok-cm{color:#67677a}
+.tok-key{color:#8ab0ff}
+.tok-str{color:#a5d6a7}
+.tok-num{color:#ffab91}
+
+/* promises */
+.promises{background:var(--bg)}
+.p-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.p-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius-l);
+  padding:28px 24px;text-align:center;transition:transform .25s,box-shadow .25s;
+}
+.p-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-m)}
+.p-card .glyph{
+  width:46px;height:46px;margin:0 auto 16px;border-radius:14px;
+  background:linear-gradient(135deg,var(--accent-soft),#e2ecff);
+  display:flex;align-items:center;justify-content:center;color:var(--accent);
+}
+.p-card h3{font-size:16px;color:var(--ink);font-weight:700}
+.p-card p{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.7}
+
+/* ============ Quick start ============ */
+.quick{background:#fff;border-top:1px solid var(--line)}
+.quick-wrap{display:grid;grid-template-columns:1fr 1.25fr;gap:60px;align-items:center}
+.quick .sec-head{text-align:left;margin:0}
+.quick-list{margin-top:26px;display:flex;flex-direction:column;gap:12px;font-size:14.5px;color:var(--fg)}
+.quick-list li{list-style:none;display:flex;gap:10px;align-items:flex-start}
+.quick-list li::before{content:"✓";flex:none;color:#2fbf71;font-weight:800;margin-top:1px}
+.term{
+  background:var(--dark);border-radius:var(--radius-l);overflow:hidden;
+  border:1px solid #2e2e38;box-shadow:var(--shadow-l);
+}
+.term pre{
+  padding:22px 24px;font-family:var(--mono);font-size:13px;line-height:2.05;
+  color:#c9c9d4;overflow-x:auto;
+}
+.term .pr{color:#7aa8ff;user-select:none}
+.term .cm{color:#67677a}
+.quick-note{margin-top:18px;font-size:13px;color:var(--muted)}
+.quick-note code{
+  font-family:var(--mono);font-size:12px;background:var(--accent-soft);
+  color:var(--accent);padding:2px 8px;border-radius:6px;
+}
+
+/* ============ Final CTA ============ */
+.final{
+  background:
+    radial-gradient(700px 300px at 50% 120%,rgba(62,99,221,.28),transparent 70%),
+    var(--dark);
+  color:#f0f0f5;text-align:center;padding:120px 0 110px;
+}
+.final h2{font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.final p{margin:20px auto 0;max-width:520px;color:#9a9aa5;font-size:16.5px}
+.final .btn{margin-top:38px;padding:14px 34px;font-size:16px}
+
+/* ============ Footer ============ */
+footer{
+  background:var(--dark);border-top:1px solid var(--dark-line);
+  padding:34px 0;color:#8f8f9c;font-size:13px;
+}
+.footer-inner{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.footer-logo{width:26px;height:26px;border-radius:7px}
+.footer-brand{font-weight:700;color:#dcdce4}
+.footer-links{margin-left:auto;display:flex;gap:22px}
+.footer-links a{transition:color .2s}
+.footer-links a:hover{color:#fff}
+
+/* ============ Reveal ============ */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}
+.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+
+/* ============ Responsive ============ */
+@media (max-width:1000px){
+  .f-grid{grid-template-columns:repeat(2,1fr)}
+  .color-wrap,.data-wrap,.quick-wrap{grid-template-columns:1fr;gap:44px}
+  .float-card{display:none}
+  .p-grid{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:640px){
+  .nav-links{display:none}
+  .f-grid,.p-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr}
+  .aw-grid{grid-template-columns:repeat(3,1fr)}
+  .demo-grid{grid-template-columns:repeat(3,1fr)}
+  .hero{padding-top:130px}
+  section{padding:80px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#top" style="display:flex;align-items:center;gap:10px">
+      <img src="icon.png" alt="Brollary 图标" class="nav-logo">
+      <span class="nav-brand"><span class="nav-logo-name">Brollary</span><span class="nav-logo-cn">空镜库</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">特性</a>
+      <a href="#color">颜色搜索</a>
+      <a href="#data">数据属于你</a>
+      <a href="#start">快速开始</a>
+    </div>
+    <a class="btn btn-primary btn-nav" href="https://github.com/bokix/brollary" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero" id="top">
+  <div class="container hero-inner">
+    <div class="hero-badge reveal"><span class="dot"></span><span><b>本地优先</b> · 开放格式 · 免费开源</span></div>
+    <h1 class="reveal d1">把散落各处的素材，<br>收进<span class="grad">同一个地方</span>。</h1>
+    <p class="hero-sub reveal d2">Brollary（空镜库）是为设计师、剪辑师和所有被素材淹没的人而生的本地素材库管理器——图片、视频、音频、字体、LUT，可浏览、可搜索、可复用。</p>
+    <div class="hero-cta reveal d3">
+      <a class="btn btn-primary" href="https://github.com/bokix/brollary" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        在 GitHub 上获取
+      </a>
+      <a class="btn btn-ghost" href="#features">探索特性 ↓</a>
+    </div>
+
+    <!-- App window mockup -->
+    <div class="hero-visual reveal d4">
+      <div class="app-window">
+        <div class="aw-titlebar">
+          <span class="aw-dot r"></span><span class="aw-dot y"></span><span class="aw-dot g"></span>
+          <span class="aw-title">我的资源库.library — Brollary</span>
+        </div>
+        <div class="aw-header">
+          <span><span class="aw-brand">Brollary</span> <span class="aw-brand-cn">空镜库</span></span>
+          <span class="aw-hbtn">库管理</span>
+          <span class="aw-search">搜索（名称 / 标签 / 注释 / URL）</span>
+          <span class="aw-hbtn">元信息</span>
+          <span class="aw-hbtn">☀️ 亮色</span>
+        </div>
+        <div class="aw-body">
+          <aside class="aw-sidebar">
+            <div class="aw-side-title">视图</div>
+            <div class="aw-nav on"><span>全部素材</span><span class="aw-n">888</span></div>
+            <div class="aw-nav"><span>图片</span><span class="aw-n">512</span></div>
+            <div class="aw-nav"><span>视频</span><span class="aw-n">194</span></div>
+            <div class="aw-nav"><span>音频</span><span class="aw-n">96</span></div>
+            <div class="aw-nav"><span>字体</span><span class="aw-n">24</span></div>
+            <div class="aw-side-title">智能文件夹</div>
+            <div class="aw-nav"><span>1080p 横版视频</span><span class="aw-n">61</span></div>
+            <div class="aw-nav"><span>wav 音效</span><span class="aw-n">40</span></div>
+            <div class="aw-side-title">工具</div>
+            <div class="aw-nav"><span>按颜色搜索</span></div>
+            <div class="aw-nav"><span>重复文件</span></div>
+          </aside>
+          <div class="aw-main">
+            <div class="aw-chips">
+              <span class="aw-chip on">全部</span><span class="aw-chip">jpg</span><span class="aw-chip">png</span><span class="aw-chip">gif</span><span class="aw-chip">mp4</span><span class="aw-chip">mov</span><span class="aw-chip">wav</span><span class="aw-chip">ttf</span><span class="aw-chip">cube</span>
+            </div>
+            <div class="aw-grid" id="awGrid"><!-- tiles injected by JS --></div>
+          </div>
+        </div>
+        <div class="aw-footer"><span>888 个素材</span><span>本地 API :41596 · 就绪</span></div>
+      </div>
+
+      <div class="float-card fc-color">
+        <div class="fc-title">🎨 按颜色找素材</div>
+        <div class="fc-swatches">
+          <span class="fc-swatch" style="background:#e2574c"></span>
+          <span class="fc-swatch ring" style="background:#4f8cff"></span>
+          <span class="fc-swatch" style="background:#f2c94c"></span>
+          <span class="fc-swatch" style="background:#2fbf71"></span>
+        </div>
+      </div>
+      <div class="float-card fc-src">
+        <div class="fc-title">🔗 来源自动记录</div>
+        <div class="url">pinterest.com/pin/8471…</div>
+        <div class="cap">采集时写入条目，永不迷路</div>
+      </div>
+      <div class="float-card fc-fast">
+        <div class="fc-title">🧠 智能文件夹</div>
+        <div class="cap">「所有 1080p 横版视频」——存一次，自动更新</div>
+      </div>
+    </div>
+
+    <div class="stats reveal">
+      <div class="stat">
+        <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>一切素材，一个库</div>
+        <div class="c">图片 · 视频 · 音频 · 字体 · LUT</div>
+      </div>
+      <div class="stat">
+        <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><circle cx="8.5" cy="9" r="1" fill="currentColor"/><circle cx="15.5" cy="9" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/></svg>按颜色找素材</div>
+        <div class="c">记住画面，就能找到</div>
+      </div>
+      <div class="stat">
+        <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="m12 11 .9 1.9 1.9.9-1.9.9L12 16.6l-.9-1.9-1.9-.9 1.9-.9L12 11Z" fill="currentColor" stroke="none"/></svg>智能文件夹</div>
+        <div class="c">筛选条件存成会自动更新的文件夹</div>
+      </div>
+      <div class="stat">
+        <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>网页一键采集</div>
+        <div class="c">浏览器扩展 · 来源自动记录</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= FEATURES ================= -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div class="sec-tag">Features</div>
+      <h2>该有的都有，<br>还有你没见过的。</h2>
+      <p>从采集、组织到检索、复用——Brollary 把素材管理的每一步都做扎实。</p>
+    </div>
+    <div class="f-grid">
+      <div class="f-card reveal">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></div>
+        <h3>一切素材，一个库</h3>
+        <p>图片、GIF、视频、音频、字体、LUT、工程文件统统收纳。瀑布流一屏浏览，悬停即播放，再也不用在一堆文件夹里翻箱倒柜。</p>
+      </div>
+      <div class="f-card reveal d1">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><circle cx="8.5" cy="9" r="1" fill="currentColor"/><circle cx="15.5" cy="9" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/></svg></div>
+        <h3>按颜色找素材</h3>
+        <p>你记住的往往不是文件名，而是画面。内置拾色器：取一个颜色，找出库里主色调相近的所有素材——找到的就是「看起来像」的。</p>
+        <div class="mini">CIELAB 色差 · 色板索引</div>
+      </div>
+      <div class="f-card reveal d2">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6M11 8v6" opacity=".6"/></svg></div>
+        <h3>快到无感的搜索</h3>
+        <p>索引化全文检索，文件名、标签、注释、来源 URL 即输即得，中文开箱即用。万级素材，依然毫秒级响应。</p>
+        <div class="mini">SQLite + FTS5 · 索引可重建</div>
+      </div>
+      <div class="f-card reveal">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="m12 11 .9 1.9 1.9.9-1.9.9L12 16.6l-.9-1.9-1.9-.9 1.9-.9L12 11Z" fill="currentColor" stroke="none"/></svg></div>
+        <h3>智能文件夹</h3>
+        <p>把常用筛选条件存成「会自动更新的文件夹」：所有 wav 音效、所有 1080p 以上的横版视频……条件支持组合与嵌套。</p>
+      </div>
+      <div class="f-card reveal d1">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></div>
+        <h3>重复文件扫描</h3>
+        <p>按内容（而非文件名）识别重复素材，逐组预览、一键清理，腾出磁盘空间。清理默认只进回收站，安全第一。</p>
+      </div>
+      <div class="f-card reveal d2">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
+        <h3>网页一键采集</h3>
+        <p>浏览器扩展：看到喜欢的图，右键收藏或批量勾选入库。来源网址自动记录，永远知道素材从哪来。</p>
+        <div class="mini">Chrome / Edge · Manifest V3</div>
+      </div>
+      <div class="f-card reveal">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M9 8h6v3a3 3 0 0 1-6 0V8Z"/><path d="M12 14v8"/></svg></div>
+        <h3>开放本地接口</h3>
+        <p>应用内置本地 HTTP API，只绑定回环地址、拒绝跨站请求。任何本机脚本、自动化流程、第三方工具都能往库里推素材。</p>
+        <div class="mini">curl 127.0.0.1:41596/api/ping</div>
+      </div>
+      <div class="f-card reveal d1">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="m10.5 11 3 5m0-5-3 5" opacity=".7"/></svg></div>
+        <h3>误删不怕</h3>
+        <p>删除先进回收站，随时一键恢复；重复扫描默认也只移入回收站。破坏性操作，永远不在默认路径上。</p>
+      </div>
+      <div class="f-card reveal d2">
+        <div class="f-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13.5"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></div>
+        <h3>多库管理</h3>
+        <p>新建空库、添加现有 .library 素材库、或直接导入文件夹，随时切换。外置盘、网络盘不可用时优雅降级，绝不报错甩脸。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COLOR SEARCH DEMO ================= -->
+<section class="color-sec" id="color">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div class="sec-tag">Color Search</div>
+      <h2>你记住的不是文件名，是画面。</h2>
+      <p>取一个颜色，Brollary 基于感知均匀的色差模型，找出主色调相近的所有素材。下面这个迷你演示，就是真实体验：</p>
+    </div>
+    <div class="color-wrap reveal">
+      <div class="color-copy">
+        <p class="big">选中一个颜色试试 👇<br>相似的素材会<em>立刻亮起来</em>。</p>
+        <p class="sub">每个素材入库时都会提取主色板（RGB + 占比）。检索时用 CIELAB 色差计算相似度——不是机械的 RGB 距离，而是「看起来像」的那种相似。</p>
+        <div class="picker">
+          <div class="picker-label">点击色板开始搜索，或选自定义颜色：</div>
+          <div class="picker-row" id="pickerRow">
+            <button class="p-swatch" data-c="226,87,76" style="background:#e2574c" aria-label="红色"></button>
+            <button class="p-swatch" data-c="242,178,62" style="background:#f2b23e" aria-label="橙黄"></button>
+            <button class="p-swatch" data-c="47,156,104" style="background:#2f9c68" aria-label="绿色"></button>
+            <button class="p-swatch" data-c="79,140,255" style="background:#4f8cff" aria-label="蓝色"></button>
+            <button class="p-swatch" data-c="126,87,194" style="background:#7e57c2" aria-label="紫色"></button>
+            <button class="p-swatch" data-c="38,50,56" style="background:#263238" aria-label="深色"></button>
+            <label class="p-custom">＋<input type="color" id="customColor" value="#e2574c"></label>
+          </div>
+          <div class="demo-meta" id="demoMeta">已就绪：点任意色板，试试「按颜色找素材」。</div>
+        </div>
+      </div>
+      <div class="demo-grid" id="demoGrid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DATA OWNERSHIP ================= -->
+<section class="data-sec" id="data">
+  <div class="container">
+    <div class="data-wrap">
+      <div class="reveal">
+        <div class="sec-tag">Your Data</div>
+        <h2 style="font-size:clamp(28px,3.6vw,38px);color:var(--ink);letter-spacing:-.02em;line-height:1.25;font-weight:800">数据属于你。<br>字面意义上的。</h2>
+        <div class="data-points">
+          <div class="dpt">
+            <div class="n">1</div>
+            <div>
+              <h4>库就是一个普通文件夹</h4>
+              <p>里面是原始文件 + 人类可读的 JSON 元数据。没有私有数据库、没有加密，用任何文本编辑器都能打开。</p>
+            </div>
+          </div>
+          <div class="dpt">
+            <div class="n">2</div>
+            <div>
+              <h4>索引只是加速层</h4>
+              <p>检索索引可以随时删除重建，权威数据永远是文件本身。换电脑、备份、迁移，复制文件夹即可。</p>
+            </div>
+          </div>
+          <div class="dpt">
+            <div class="n">3</div>
+            <div>
+              <h4>不静默丢数据</h4>
+              <p>个别文件元数据损坏时，会保留现场并明确报告原因，绝不悄悄丢弃你的素材。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal d2">
+        <div class="code-card">
+          <div class="code-bar">
+            <span class="aw-dot r"></span><span class="aw-dot y"></span><span class="aw-dot g"></span>
+            <span class="name">你的素材库.library — 所见即所得</span>
+          </div>
+<pre><span class="tok-dir">你的素材库.library/</span>          <span class="tok-cm"># 就是一个普通文件夹</span>
+├── metadata.json          <span class="tok-cm"># 文件夹树、智能文件夹、标签组</span>
+├── tags.json              <span class="tok-cm"># 标签状态</span>
+├── backup/                <span class="tok-cm"># 库级元数据自动快照</span>
+└── images/
+    └── <span class="tok-dir">MT89NPKT183JM.info/</span>  <span class="tok-cm"># 每个素材一个目录</span>
+        ├── metadata.json
+        ├── 海边落日.mp4        <span class="tok-cm"># 原始文件，原样保存</span>
+        └── 海边落日_thumbnail.png
+
+<span class="tok-cm"># metadata.json — 人类可读，任何编辑器都能打开</span>
+{
+  <span class="tok-key">"name"</span>: <span class="tok-str">"海边落日"</span>,
+  <span class="tok-key">"ext"</span>: <span class="tok-str">"mp4"</span>,
+  <span class="tok-key">"tags"</span>: [<span class="tok-str">"空镜"</span>, <span class="tok-str">"暖色调"</span>],
+  <span class="tok-key">"duration"</span>: <span class="tok-num">10.04</span>,
+  <span class="tok-key">"url"</span>: <span class="tok-str">"https://…来源自动记录"</span>,
+  <span class="tok-key">"palettes"</span>: [{ <span class="tok-key">"color"</span>: [<span class="tok-num">242</span>, <span class="tok-num">141</span>, <span class="tok-num">76</span>], <span class="tok-key">"ratio"</span>: <span class="tok-num">54</span> }]
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROMISES ================= -->
+<section class="promises">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div class="sec-tag">Promises</div>
+      <h2>四条设计承诺，写进代码里。</h2>
+    </div>
+    <div class="p-grid">
+      <div class="p-card reveal">
+        <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.8-1.3"/></svg></div>
+        <h3>不锁定</h3>
+        <p>开放格式，随时可以离开，数据原样带走。</p>
+      </div>
+      <div class="p-card reveal d1">
+        <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 19.5h19L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg></div>
+        <h3>不静默</h3>
+        <p>出错就明说，损坏就报告，绝不悄悄吞掉你的素材。</p>
+      </div>
+      <div class="p-card reveal d2">
+        <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></div>
+        <h3>可重建</h3>
+        <p>索引永远可以从原始数据重建，缓存坏了不算事。</p>
+      </div>
+      <div class="p-card reveal d3">
+        <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>安全优先</h3>
+        <p>删除先进回收站，破坏性操作永远不在默认路径上。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= QUICK START ================= -->
+<section class="quick" id="start">
+  <div class="container">
+    <div class="quick-wrap">
+      <div class="sec-head reveal" style="text-align:left">
+        <div class="sec-tag">Quick Start</div>
+        <h2>三条命令，<br>把素材收进同一个地方。</h2>
+        <ul class="quick-list">
+          <li>环境要求：macOS + Node.js ≥ 26</li>
+          <li>首次启动：新建空库 / 添加现有 .library / 导入文件夹</li>
+          <li>浏览器扩展：Chrome / Edge，看到好图右键即收</li>
+          <li>附赠命令行工具，适合脚本化与批量操作</li>
+        </ul>
+        <p class="quick-note">也试试 CLI：<code>node src/cli.ts search "纹理"</code>、<code>node src/cli.ts color "62,99,221"</code>、<code>node src/cli.ts dedup</code></p>
+      </div>
+      <div class="reveal d2">
+        <div class="term">
+          <div class="code-bar">
+            <span class="aw-dot r"></span><span class="aw-dot y"></span><span class="aw-dot g"></span>
+            <span class="name">zsh — brollary</span>
+          </div>
+<pre><span class="pr">$</span> git clone https://github.com/bokix/brollary.git
+<span class="pr">$</span> cd brollary
+<span class="pr">$</span> npm install
+<span class="pr">$</span> npm start          <span class="cm"># 启动桌面应用 ✨</span>
+
+<span class="cm"># 首次启动：新建空库 / 添加现有 .library / 导入文件夹</span>
+<span class="cm"># 装好浏览器扩展后，网页上看到好图即可右键收藏 ✨</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section class="final">
+  <div class="container reveal">
+    <h2>别再让素材<br>散落在各处了。</h2>
+    <p>免费、开源、本地优先。现在就把它们收进同一个地方。</p>
+    <a class="btn btn-primary" href="https://github.com/bokix/brollary" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      在 GitHub 上获取 Brollary
+    </a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="container footer-inner">
+    <img src="icon.png" alt="" class="footer-logo">
+    <span><span class="footer-brand">Brollary · 空镜库</span> — B-roll + Library，本地优先的素材库管理器</span>
+    <div class="footer-links">
+      <a href="https://github.com/bokix/brollary" target="_blank" rel="noopener">GitHub</a>
+      <a href="#features">特性</a>
+      <a href="#start">快速开始</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============ Nav scroll state ============ */
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 10), {passive:true});
+
+/* ============ Reveal on scroll ============ */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), {threshold:.12});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ============ Mock app grid ============ */
+const GRAD = (a,b,deg=135) => `linear-gradient(${deg}deg,${a},${b})`;
+const heroTiles = [
+  {t:'video', g:GRAD('#e2765f','#c94b5f'), n:'海边落日', e:'mp4', d:'00:10'},
+  {t:'img',   g:GRAD('#4f8cff','#3e63dd'), n:'星空摄影', e:'jpg', tag:'灵感'},
+  {t:'img',   g:GRAD('#2fbf71','#1f8a52'), n:'森林雾景', e:'png'},
+  {t:'video', g:GRAD('#7e57c2','#512da8'), n:'城市延时', e:'mov', d:'00:24'},
+  {t:'img',   g:GRAD('#f2b23e','#e2574c'), n:'沙漠曲线', e:'jpg'},
+  {t:'font',  n:'思源黑体', e:'ttf', txt:'Aa'},
+  {t:'img',   g:GRAD('#38b6c8','#2b7fb8'), n:'冰川湖面', e:'webp'},
+  {t:'video', g:GRAD('#2c3e50','#4a5a6a'), n:'夜景航拍', e:'mp4', d:'01:12', tag:'空镜'},
+  {t:'img',   g:GRAD('#d76d9e','#a44a78'), n:'霓虹街角', e:'gif'},
+  {t:'lut',   n:'电影胶片', e:'cube'},
+  {t:'img',   g:GRAD('#f5d76e','#e8a13d'), n:'麦田光影', e:'jpg'},
+  {t:'video', g:GRAD('#35b6a0','#2b8a78'), n:'海浪慢镜', e:'mov', d:'00:08'},
+];
+const lutColors = ['#f6d8a8','#e8a45f','#c96f3b','#8a4b2d','#f2e3c9','#d8b088','#a25a35','#6e3a22','#dbe7f0','#a9c3d8','#6f93ad','#425e75','#2c2c34','#3d3a4a','#1d1f2b','#14141c'];
+const grid = document.getElementById('awGrid');
+grid.innerHTML = heroTiles.map(t => {
+  let inner;
+  if (t.t === 'font') inner = `<div class="thumb" style="aspect-ratio:4/3">${t.txt}</div>`;
+  else if (t.t === 'lut') inner = `<div class="thumb" style="aspect-ratio:4/3">${lutColors.map(c=>`<span style="background:${c}"></span>`).join('')}</div>`;
+  else inner = `<div class="thumb" style="aspect-ratio:4/3;background:${t.g}">
+      ${t.t==='video' ? '<span class="play"><span>▶</span></span><span class="dur">'+t.d+'</span>' : ''}
+    </div>${t.t==='video' ? '<div class="pbar"><i></i></div>' : ''}`;
+  return `<div class="tile ${t.t==='video'?'video':''} ${t.t==='font'?'font-thumb':''} ${t.t==='lut'?'lut-thumb':''} ${t.tag?'tag':''}" ${t.tag?`data-tag="${t.tag}"`:''}>${inner}
+    <div class="label"><span class="ext">.${t.e}</span>${t.n}</div></div>`;
+}).join('');
+
+/* ============ Color search demo ============ */
+const demoTiles = [
+  {g:GRAD('#e2765f','#c94b5f'), c:[214,96,82],  n:'海边落日', e:'jpg'},
+  {g:GRAD('#4f8cff','#3e63dd'), c:[79,120,230], n:'星空摄影', e:'jpg'},
+  {g:GRAD('#2fbf71','#1f8a52'), c:[47,156,104], n:'森林雾景', e:'png'},
+  {g:GRAD('#f2b23e','#e2574c'), c:[235,158,66], n:'沙漠曲线', e:'jpg'},
+  {g:GRAD('#7e57c2','#512da8'), c:[126,87,194], n:'城市蓝调', e:'mp4'},
+  {g:GRAD('#38b6c8','#2b7fb8'), c:[64,160,190], n:'冰川湖面', e:'webp'},
+  {g:GRAD('#f5d76e','#e8a13d'), c:[240,190,84], n:'麦田光影', e:'jpg'},
+  {g:GRAD('#2c3e50','#4a5a6a'), c:[52,66,84],   n:'夜景航拍', e:'mp4'},
+  {g:GRAD('#d76d9e','#a44a78'), c:[198,96,138], n:'霓虹街角', e:'gif'},
+  {g:GRAD('#35b6a0','#2b8a78'), c:[53,158,148], n:'海浪慢镜', e:'mov'},
+  {g:GRAD('#e8e8ec','#c4c4d0'), c:[220,220,228],n:'雾中远山', e:'jpg'},
+  {g:GRAD('#8a4b2d','#5d3220'), c:[138,75,45],  n:'咖啡特写', e:'jpg'},
+];
+const demoGrid = document.getElementById('demoGrid');
+const demoMeta = document.getElementById('demoMeta');
+demoGrid.innerHTML = demoTiles.map(t =>
+  `<div class="d-tile" data-c="${t.c.join(',')}">
+    <div class="d-thumb" style="background:${t.g}"><span class="d-sim">98%</span></div>
+    <div class="d-label"><span class="ext">.${t.e}</span>${t.n}</div>
+  </div>`).join('');
+
+/* sRGB → CIELAB (D65) */
+function rgb2lab([r,g,b]){
+  const f = c => { c/=255; return c <= .04045 ? c/12.92 : Math.pow((c+.055)/1.055, 2.4); };
+  let [R,G,B] = [f(r),f(g),f(b)];
+  let x=(R*.4124+G*.3576+B*.1805)/.95047, y=(R*.2126+G*.7152+B*.0722), z=(R*.0193+G*.1192+B*.9505)/1.08883;
+  const h = t => t > .008856 ? Math.cbrt(t) : 7.787*t + 16/116;
+  [x,y,z]=[h(x),h(y),h(z)];
+  return [116*y-16, 500*(x-y), 200*(y-z)];
+}
+function deltaE(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]); }
+
+const tiles = [...demoGrid.querySelectorAll('.d-tile')].map(el => ({
+  el,
+  lab: rgb2lab(el.dataset.c.split(',').map(Number)),
+  sim: el.querySelector('.d-sim')
+}));
+
+function pickColor(rgb){
+  const target = rgb2lab(rgb);
+  const scored = tiles.map(t => ({...t, de: deltaE(target, t.lab)}));
+  const hits = scored.filter(t => t.de < 55);
+  demoGrid.classList.add('picked');
+  scored.forEach(t => {
+    const hit = t.de < 55;
+    t.el.classList.toggle('hit', hit);
+    if (hit) {
+      const pct = Math.max(72, Math.round(100 - t.de * .5));
+      t.sim.textContent = pct + '%';
+    }
+  });
+  document.querySelectorAll('.p-swatch').forEach(s =>
+    s.classList.toggle('on', s.dataset.c === rgb.join(',')));
+  const hex = '#' + rgb.map(v => v.toString(16).padStart(2,'0')).join('');
+  demoMeta.innerHTML = hits.length
+    ? `目标色 <b>${hex}</b> · 命中 <b>${hits.length}</b> / ${tiles.length} 条素材（ΔE &lt; 55）`
+    : `目标色 <b>${hex}</b> · 没有相近素材，换个颜色试试`;
+}
+document.querySelectorAll('.p-swatch').forEach(s =>
+  s.addEventListener('click', () => pickColor(s.dataset.c.split(',').map(Number))));
+document.getElementById('customColor').addEventListener('input', e => {
+  const v = e.target.value;
+  pickColor([parseInt(v.slice(1,3),16), parseInt(v.slice(3,5),16), parseInt(v.slice(5,7),16)]);
+});
+</script>
+</body>
+</html>

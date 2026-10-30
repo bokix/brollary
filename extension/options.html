@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font: 13px/1.6 -apple-system, "PingFang SC", sans-serif; padding: 16px; width: 360px; }
+    label { display: block; margin-top: 10px; }
+    input { padding: 5px 8px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 14px; padding: 6px 16px; border: 0; border-radius: 6px; background: #3e63dd; color: #fff; cursor: pointer; }
+    p { color: #777; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h3>Brollary 采集设置</h3>
+  <label>API 端口（应用默认 41596）
+    <input id="port" type="number">
+  </label>
+  <label>默认标签（逗号分隔）
+    <input id="tags" placeholder="例如：网页采集,灵感">
+  </label>
+  <button id="save">保存</button>
+  <span id="status"></span>
+  <p>右键任意图片可单张收藏；点工具栏图标可批量勾选当前页图片。</p>
+  <script src="options.js"></script>
+</body>
+</html>
