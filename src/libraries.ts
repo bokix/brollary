@@ -9,7 +9,7 @@ const EMPTY_META: LibraryMeta = {
   quickAccess: [],
   tagsGroups: [],
   modificationTime: 0,
-  applicationVersion: "brollary-0.1.0",
+  applicationVersion: "brollary-0.1.1",
 };
 
 /** 新建一个空 .library（同名目录已存在时拒绝，避免误覆盖） */

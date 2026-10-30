@@ -53,7 +53,7 @@ export function startApiServer(dbOrCtx: DatabaseSync | ApiOptions, opts?: ApiOpt
     try {
       // GET /api/ping —— 存活与握手
       if (req.method === "GET" && url.pathname === "/api/ping") {
-        send(res, 200, { status: "success", name: "brollary", displayName: "Brollary 空镜库", version: "0.1.0" });
+        send(res, 200, { status: "success", name: "brollary", displayName: "Brollary 空镜库", version: "0.1.1" });
         return;
       }
 

@@ -34,7 +34,7 @@ app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 app.setName("Brollary");
 app.setAboutPanelOptions({
   applicationName: "Brollary",
-  applicationVersion: "0.1.0",
+  applicationVersion: "0.1.1",
   credits: "空镜库 · 本地素材管理",
 });
 

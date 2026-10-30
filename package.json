@@ -1,6 +1,6 @@
 {
   "name": "brollary",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "productName": "Brollary",
   "description": "Brollary（空镜库）— 本地优先的素材库管理器。JSON 为权威源，SQLite/FTS5 是可重建索引。工作代号 stash，已定名 Brollary。",
