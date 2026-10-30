@@ -1,35 +1,67 @@
-# Brollary macOS 打包配置（electron-builder）
+# Brollary 打包配置（electron-builder）
+# 本地打包：npm run dist（仅当前平台）；三平台制品由 GitHub Actions 产出（.github/workflows/release.yml）
 appId: com.bokix.brollary
 productName: Brollary
 directories:
   output: release
   buildResources: assets
 
+# 各平台通用：只打包运行所需内容
 files:
   - electron/**
   - dist/**
   - renderer/**
   - assets/**
   - package.json
-  # ffprobe-static 的 npm 包内含全平台二进制，只保留 darwin，减体积
-  - "!**/ffprobe-static/bin/{linux,win32}/**"
 
 # ffmpeg/ffprobe 二进制无法从 asar 内执行，必须解包到实体文件系统
 asarUnpack:
   - "node_modules/ffmpeg-static/**"
   - "node_modules/ffprobe-static/**"
 
+# ===== 平台差异化 =====
+# ffprobe-static 的 npm 包内含全平台二进制（darwin/linux/win32），各平台只保留自己的，控制体积
 mac:
   icon: assets/brollary.icns
   category: public.app-category.graphics-design
   # 未申请 Apple 开发者证书：跳过签名与公证（ad-hoc）
   identity: null
+  files:
+    - "!**/ffprobe-static/bin/{linux,win32}/**"
   target:
     - target: dmg
       arch: [arm64]
     - target: zip
       arch: [arm64]
   artifactName: ${productName}-${version}-mac-${arch}.${ext}
+
+win:
+  icon: assets/icon_512.png
+  files:
+    - "!**/ffprobe-static/bin/{darwin,linux}/**"
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+  artifactName: ${productName}-${version}-win-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-${version}-win-${arch}-setup.${ext}
+
+linux:
+  icon: assets/icon_512.png
+  category: Graphics
+  files:
+    - "!**/ffprobe-static/bin/{darwin,win32}/**"
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: tar.gz
+      arch: [x64]
+  artifactName: ${productName}-${version}-linux-${arch}.${ext}
 
 dmg:
   title: Brollary ${version}
